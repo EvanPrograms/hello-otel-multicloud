@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hello-otel
+description: Tiny Node/Express app with OpenTelemetry, deployed via Helm
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

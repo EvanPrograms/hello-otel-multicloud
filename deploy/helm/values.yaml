@@ -1,0 +1,23 @@
+image:
+  repository: "REPLACE_ME_REGISTRY/hello-otel"
+  tag: "dev"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80
+  targetPort: 3000
+
+otel:
+  endpoint: "http://otel-collector:4318"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: false
+  host: "example.yourdomain.com"
