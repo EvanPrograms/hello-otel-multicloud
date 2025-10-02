@@ -6,7 +6,7 @@ resource "azurerm_resource_group" "rg" {
 
 # --- ACR (Azure Container Registry) module ---
 module "acr" {
-  source              = "${path.module}/../modules/azure-acr"
+  source              = "../modules/azure-acr"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   acr_name            = var.acr_name
@@ -14,7 +14,7 @@ module "acr" {
 
 # --- AKS (Azure Kubernetes Service) module ---
 module "aks" {
-  source              = "${path.module}/../modules/azure-aks"
+  source              = "../modules/azure-aks"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   aks_name            = var.aks_name
