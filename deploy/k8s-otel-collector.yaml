@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+          grpc:
+            endpoint: 0.0.0.0:4317
+
+    processors:
+      batch: {}
+
+    exporters:
+      # US region; if your account is EU, use https://otlp.eu01.nr-data.net
+      otlphttp/newrelic:
+        endpoint: https://otlp.nr-data.net
+        headers:
+          api-key: ${NEW_RELIC_API_KEY}
+        compression: gzip
+        tls:
+          insecure: false
+
+      # keep local visibility
+      debug:
+        verbosity: detailed
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/newrelic, debug]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/newrelic, debug]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/newrelic, debug]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otelcol
+          image: otel/opentelemetry-collector-contrib:latest
+          args: ["--config=/conf/otel-collector-config.yaml"]
+          env:
+            - name: NEW_RELIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: newrelic-otel
+                  key: apiKey
+          ports:
+            - containerPort: 4317 # gRPC
+            - containerPort: 4318 # HTTP
+          volumeMounts:
+            - name: conf
+              mountPath: /conf
+      volumes:
+        - name: conf
+          configMap:
+            name: otel-collector-config
+            items:
+              - key: otel-collector-config.yaml
+                path: otel-collector-config.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+spec:
+  selector:
+    app: otel-collector
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
